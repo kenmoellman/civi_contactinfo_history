@@ -1,27 +1,29 @@
-# Contact History Extension
+# ContactInfo History Extension for CiviCRM
 
-This CiviCRM extension tracks historical changes to contact addresses, emails, and phone numbers using database triggers.
+Track historical changes to contact addresses, emails, and phone numbers using database triggers. View a complete change timeline for any contact.
 
 ## Features
 
-- **Automatic History Tracking**: Uses database triggers to automatically capture changes when addresses, emails, or phone numbers are added, updated, or deleted
-- **Dedicated History Tables**: Creates separate history tables that mirror the original structure but without foreign key constraints
-- **Contact History Tab**: Adds a new tab to contact view showing complete history for addresses, emails, and phones
-- **Permission-Based Management**: Edit and delete functionality restricted to users with appropriate permissions
-- **API Support**: Full API3 and API4 compatibility for integration with other systems
-- **SearchKit Compatible**: History data can be used in SearchKit searches and displays
+- **Automatic History Tracking**: Database triggers capture changes when addresses, emails, or phone numbers are added, updated, or deleted
+- **Significant Change Detection**: Only creates new history entries for meaningful changes (e.g., address or email changes), while silently updating non-significant fields (e.g., geocode updates)
+- **Contact Merge Support**: When contacts are merged, history records are reassigned to the winning contact while preserving the original contact ID for audit purposes
+- **Contact History Tab**: Adds a tab to the contact view showing complete history for addresses, emails, and phones
+- **API4 Support**: Full API4 entities for integration with other systems
+- **Permission-Based Management**: History management restricted to users with appropriate permissions
 
 ## Requirements
 
-- CiviCRM 6.0 or higher
-- PHP 8.2, 8.3, or 8.4
+- CiviCRM 6.9 or higher
+- PHP 8.3 or higher
 - MySQL/MariaDB with trigger support
+- Smarty 2 or Smarty 5
 
 ## Installation
 
 1. Download the extension to your CiviCRM extensions directory
-2. Enable the extension through Administer > System Settings > Extensions
-3. History tables will be created and populated with current data automatically
+2. **Complete any data deduplication work first** — the initial history snapshot should capture clean data
+3. Enable the extension through Administer > System Settings > Extensions
+4. History tables will be created and populated with current data automatically
 
 ## Usage
 
@@ -30,24 +32,25 @@ This CiviCRM extension tracks historical changes to contact addresses, emails, a
 1. Navigate to any contact record
 2. Click the "Contact History" tab
 3. View address, email, and phone history with start/end dates
+4. Records with no end date are current; ended records are shown with a gray background
 
-### Managing History
+### Understanding Merged Records
 
-Users with "Manage Contact History" permission can:
-- Edit historical records
-- Delete historical records
-- View complete change timeline
+When contacts are merged, the history tab shows the complete trail:
+- Records where `orig_contact_id` differs from `contact_id` came from a merged contact
+- The original contact ID is preserved for audit purposes
 
-### API Access
+### API4 Access
 
-The extension provides API3 and API4 entities:
-- `ContacthistoryAddress`
-- `ContacthistoryEmail` 
-- `ContacthistoryPhone`
+The extension provides three API4 entities:
 
-Example API4 usage:
+- `ContactinfoHistoryAddress`
+- `ContactinfoHistoryEmail`
+- `ContactinfoHistoryPhone`
+
+Example usage:
 ```php
-$history = \Civi\Api4\ContacthistoryAddress::get()
+$history = \Civi\Api4\ContactinfoHistoryAddress::get()
   ->addWhere('contact_id', '=', 123)
   ->addOrderBy('start_date', 'DESC')
   ->execute();
@@ -55,46 +58,53 @@ $history = \Civi\Api4\ContacthistoryAddress::get()
 
 ## Permissions
 
-- **View Contact History**: Included with standard contact view permissions
-- **Manage Contact History**: Required to edit/delete history records (defaults to admin only)
+- **View Contact History**: Included with standard CiviCRM contact view permissions
+- **Manage ContactInfo History**: Required to edit/delete history records (future feature, defaults to admin only)
 
 ## Database Structure
 
-The extension creates three history tables:
-- `civicrm_contacthistory_address`
-- `civicrm_contacthistory_email`
-- `civicrm_contacthistory_phone`
+The extension creates three history tables by copying the structure of the CiviCRM source tables:
 
-Each table includes:
-- All original table fields (without foreign keys)
-- `start_date`: When the record was created
-- `modified_date`: When the record was last modified  
-- `end_date`: When the record was deleted/replaced
+- `civicrm_contactinfo_history_address` (from `civicrm_address`)
+- `civicrm_contactinfo_history_email` (from `civicrm_email`)
+- `civicrm_contactinfo_history_phone` (from `civicrm_phone`)
+
+Each history table includes all columns from the source table, plus:
+
+| Column | Description |
+|--------|-------------|
+| `id` | Auto-increment primary key for the history record |
+| `original_id` | The original record ID from the source table |
+| `orig_contact_id` | The original contact ID (preserved through merges) |
+| `start_date` | When this version of the record was created |
+| `modified_date` | When this history record was last updated |
+| `end_date` | When this record was superseded or deleted (NULL = current) |
 
 ## Technical Notes
 
-- Database triggers are created using PHP code in the Upgrader class to avoid CiviCRM SQL file parsing issues with DELIMITER statements
-- History tracking is implemented at the database level for reliability and performance
-- The extension properly handles enable/disable cycles and clean uninstallation
+- Triggers are managed via CiviCRM's `hook_civicrm_triggerInfo` for reliability
+- History tables are created using `CREATE TABLE ... LIKE` to match the source table schema exactly
+- Table charset is `utf8mb4_unicode_ci` for full Unicode support
+- Contact merges are handled via `hook_civicrm_merge` to preserve audit trail
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Triggers not working**: Ensure your database user has CREATE TRIGGER privileges
-2. **Missing history tab**: Clear CiviCRM caches and check permissions
-3. **Edit/delete buttons not working**: Verify "Manage Contact History" permission is assigned
+1. **Triggers not working**: Ensure your database user has CREATE TRIGGER privileges. Clear CiviCRM caches to rebuild triggers.
+2. **Missing history tab**: Clear CiviCRM caches (`cv flush`) and check that the extension is enabled.
+3. **Large initial population**: On databases with many contacts, the initial data population on enable may take some time. This is normal.
 
 ### Debugging
 
 - Check CiviCRM logs for SQL errors during installation
-- Verify triggers exist using `SHOW TRIGGERS` in MySQL
-- Confirm history tables contain expected data
+- Verify triggers exist: `SHOW TRIGGERS LIKE 'civicrm_address'`
+- Confirm history tables contain expected data via API4 or direct SQL
 
 ## Support
 
-Report issues and contribute at: https://github.com/kenmoellman/civicrm-contacthistory
+Report issues at: https://github.com/kenmoellman/civi_contactinfo_history/issues
 
 ## License
 
-This extension is licensed under AGPL-3.0.
+AGPL-3.0
