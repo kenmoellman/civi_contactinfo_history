@@ -6,7 +6,7 @@
   <license>AGPL-3.0</license>
   <maintainer>
     <author>Ken Moellman</author>
-    <email>civicrm@mu-net.org</email>
+    <email>civicrm@moellman.com</email>
   </maintainer>
   <urls>
     <url desc="Main Extension Page">https://github.com/kenmoellman/civi_contactinfo_history</url>
@@ -14,11 +14,19 @@
     <url desc="Support">https://github.com/kenmoellman/civi_contactinfo_history/issues</url>
   </urls>
   <releaseDate>2026-03-25</releaseDate>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <develStage>stable</develStage>
   <compatibility>
     <ver>6.9</ver>
   </compatibility>
+  <smarty_compatibility>
+    <ver>2</ver>
+    <ver>5</ver>
+  </smarty_compatibility>
+  <php_compatibility>
+    <ver>8.3</ver>
+    <ver>8.4</ver>
+  </php_compatibility>
   <comments>Creates history tables for contact addresses, emails, and phone numbers, and provides a Contact History tab for viewing historical data.</comments>
   <civix>
     <namespace>CRM/ContactinfoHistory</namespace>
