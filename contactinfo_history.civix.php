@@ -126,7 +126,7 @@ function _contactinfo_history_civix_civicrm_disable() {
 /**
  * (Delegated) Implements hook_civicrm_upgrade().
  */
-function _contactinfo_history_civix_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+function _contactinfo_history_civix_civicrm_upgrade($op, ?CRM_Queue_Queue $queue = NULL) {
   if ($upgrader = _contactinfo_history_civix_upgrader()) {
     return $upgrader->onUpgrade($op, $queue);
   }

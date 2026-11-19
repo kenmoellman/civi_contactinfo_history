@@ -49,7 +49,7 @@ function contactinfo_history_civicrm_uninstall(): void {
 /**
  * Implements hook_civicrm_upgrade().
  */
-function contactinfo_history_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
+function contactinfo_history_civicrm_upgrade($op, ?CRM_Queue_Queue $queue = NULL) {
   return _contactinfo_history_civix_civicrm_upgrade($op, $queue);
 }
 
